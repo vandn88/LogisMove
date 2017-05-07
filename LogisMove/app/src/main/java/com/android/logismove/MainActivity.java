@@ -153,7 +153,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mService.removeLocationUpdates();
             }
         });
-
         // Restore the state of the buttons when the activity (re)launches.
         setButtonsState(Utils.requestingLocationUpdates(this));
 
@@ -339,7 +338,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapInstance.clear();
     }
     private void markStartingLocationOnMap(GoogleMap mapObject, LatLng location) {
-        mapObject.addMarker(new MarkerOptions().position(location).title("Current location"));
+        mapObject.addMarker(new MarkerOptions().position(location).title("Start location"));
         mapObject.moveCamera(CameraUpdateFactory.newLatLng(location));
     }
     private void drawRouteOnMap(GoogleMap map, List<LatLng> positions) {
