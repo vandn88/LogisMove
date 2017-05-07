@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">LogisMove</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_maps">LogisMove</string>
     <string name="action_settings">Settings</string>
 
     <string name="latitude_label">Latitude</string>
@@ -15,4 +15,17 @@
 
     <string name="location_settings_inadequate_warning">The location settings on the device are not
         adequate to run this sample. Fix in Settings.</string>
+
+    <string name="location_unknown">Location unknown</string>
+    <string name="location_updates_label">Location Updates</string>
+
+    <string name="permission_rationale">Location permission is needed for core functionality</string>
+    <string name="permission_denied_explanation">Permission was denied, but is needed for core
+        functionality.</string>
+    <string name="settings">Settings</string>
+    <string name="ok">OK</string>
+    <string name="request_location_updates">START</string>
+    <string name="remove_location_updates">STOP</string>
+    <string name="launch_activity">Launch activity</string>
+    <string name="location_updated">Location Updated: %1$s</string>
 </resources>
