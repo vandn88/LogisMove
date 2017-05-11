@@ -28,4 +28,8 @@
     <string name="remove_location_updates">STOP</string>
     <string name="launch_activity">Launch activity</string>
     <string name="location_updated">Location Updated: %1$s</string>
+
+    <string name="warning_user_have_no_phonenum">"Không lấy được số điện thoại của bạn. Bạn vui lòng nhập tay nhé"</string>
+    <string name="permission_phone_state">phone state permission is needed for core functionality</string>
+    <string name="permission_phone_denied_explanation">phone state permission was denied, but is needed for core functionality</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.android.logismove;
+package com.android.logismove.client;
 
 import com.google.gson.JsonObject;
 

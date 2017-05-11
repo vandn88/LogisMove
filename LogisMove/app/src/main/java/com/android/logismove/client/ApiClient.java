@@ -1,4 +1,4 @@
-package com.android.logismove;
+package com.android.logismove.client;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
