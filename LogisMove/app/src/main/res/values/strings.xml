@@ -30,6 +30,17 @@
     <string name="location_updated">Location Updated: %1$s</string>
 
     <string name="warning_user_have_no_phonenum">"Không lấy được số điện thoại của bạn. Bạn vui lòng nhập tay nhé"</string>
-    <string name="permission_phone_state">phone state permission is needed for core functionality</string>
-    <string name="permission_phone_denied_explanation">phone state permission was denied, but is needed for core functionality</string>
+    <string name="permission_phone_state">Quyền truy cập đọc số điện thoại là cần thiết để tiến hành đăng nhập vào hệ thống</string>
+    <string name="permission_phone_denied_explanation">Bạn đã từ chối cho phép truy cập số điện thoại, nhưng nó cần thiết cho việc đăng nhập</string>
+    <string name="msg_no_internet">Không có kết nối internet, đề nghị kiểm tra lại kết nối 3G hoặc wifi</string>
+    <string name="msg_error_data">Lỗi dữ liệu server trả về. kiểm tra lại tín hiệu 3G hoặc wifi</string>
+    <string name="msg_error_item_is_deleted">Mục này không tồn tại, bạn vui lòng kiểm tra lại sau.</string>
+    <string name="msg_error_bad_request">bad request.</string>
+    <string name="msg_error_not_modify">not modify.</string>
+    <string name="msg_error_forbidden">Quyền truy cập bị chặn</string>
+    <string name="msg_require_login">Bạn vui lòng đăng nhập!</string>
+    <string name="msg_error_connect_server">Lỗi kết nối, đề nghị kiểm tra lại tín hiệu 3G hoặc wifi</string>
+    <string name="msg_error_server">Lỗi không lấy được dữ liệu. Vui lòng thử lại sau hoặc liên hệ để được trợ giúp</string>
+    <string name="msg_loading">Đang tải dữ liệu. Vui lòng chờ giây lát...</string>
+
 </resources>

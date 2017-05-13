@@ -1,4 +1,4 @@
-package com.android.logismove;
+package com.android.logismove.models;
 
 import io.realm.RealmObject;
 

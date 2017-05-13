@@ -1,5 +1,6 @@
 package com.android.logismove;
 
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,6 +14,7 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 
 import android.Manifest;
@@ -27,9 +29,19 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.android.logismove.adapter.CampaignAdapter;
+import com.android.logismove.interfaces.AsyncTaskCompleteListener;
+import com.android.logismove.models.Campaign;
+import com.android.logismove.models.LocationObject;
+import com.android.logismove.models.LocationSend;
+import com.android.logismove.utils.CommonUtils;
+import com.android.logismove.utils.ShareDataHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -44,6 +56,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.Realm;
+import io.realm.RealmConfiguration;
+
+import static com.android.logismove.R.id.map;
 
 /**
  * The only activity in this sample.
@@ -80,11 +95,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Tracks the bound state of the service.
     private boolean mBound = false;
     private GoogleMap mMap;
+    private String mSelectedCampaignId = null;
 
     // UI elements.
     private Button mRequestLocationUpdatesButton;
     private Button mRemoveLocationUpdatesButton;
-
+    private Spinner mCampaignSpinner;
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
@@ -107,15 +123,58 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         myReceiver = new MyReceiver();
         setContentView(R.layout.activity_main);
+        mCampaignSpinner = (Spinner)findViewById(R.id.spinnerCampaign);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(map);
         mapFragment.getMapAsync(this);
-        // Check that the user hasn't revoked permissions by going to Settings.
-        if (PreferenceUtil.requestingLocationUpdates(this)) {
-            if (!checkPermissions()) {
-                requestPermissions();
+        getCampaign();
+    }
+
+    public void getCampaign(){
+        final ProgressDialog progressDialog = CommonUtils.showProgressBar(MainActivity.this, R.string.msg_loading);
+
+        MyApplicaiton.getUserProxy().getUserCampaign(ShareDataHelper.getInstance().getUser().getId(), new AsyncTaskCompleteListener<ArrayList<Campaign>>() {
+            @Override
+            public void onTaskComplete(ArrayList<Campaign> result) {
+                progressDialog.dismiss();
+                // Check that the user hasn't revoked permissions by going to Settings.
+                Campaign[] arrCampaign = result.toArray(new Campaign[result.size()]);
+                final CampaignAdapter adapter = new CampaignAdapter(MainActivity.this, android.R.layout.simple_spinner_item, arrCampaign);
+               runOnUiThread(new Runnable() {
+                   @Override
+                   public void run() {
+                       mCampaignSpinner.setAdapter(adapter);
+                       mCampaignSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                           @Override
+                           public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                               String selected = adapter.getItemID(position);
+                               if(!TextUtils.equals(mSelectedCampaignId, selected)){
+                                   mSelectedCampaignId = selected;
+                                   remoteDrawRoute();
+                               }
+                           }
+
+                           @Override
+                           public void onNothingSelected(AdapterView<?> parent) {
+
+                           }
+                       });
+                       if (PreferenceUtil.requestingLocationUpdates(MainActivity.this)) {
+                           if (!checkPermissions()) {
+                               requestPermissions();
+                           }
+                       }
+                   }
+               });
             }
-        }
+
+            @Override
+            public void onFailure(int errorCode) {
+                progressDialog.dismiss();
+                mSelectedCampaignId = null;
+                CommonUtils.showMessage(errorCode, MainActivity.this);
+            }
+        });
     }
 
     @Override
@@ -134,7 +193,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     requestPermissions();
                 } else {
                     refreshMap(mMap);
-                    mService.requestLocationUpdates();
+                    mService.requestLocationUpdates(mSelectedCampaignId);
+                    mCampaignSpinner.setEnabled(false);
                 }
             }
         });
@@ -142,13 +202,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mRemoveLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Realm realm = Realm.getInstance(MainActivity.this);
-                realm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        realm.clear(LocationObject.class);
-                    }
-                });
+                mCampaignSpinner.setEnabled(true);
                 mService.removeLocationUpdates();
             }
         });
@@ -159,6 +213,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // that since this activity is in the foreground, the service can exit foreground mode.
         bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
                 Context.BIND_AUTO_CREATE);
+    }
+
+    public void remoteDrawRoute() {
+        refreshMap(mMap);
+        RealmConfiguration config2 = new RealmConfiguration.Builder(MainActivity.this)
+                .name("default2")
+                .schemaVersion(3)
+                .deleteRealmIfMigrationNeeded()
+                .build();
+           Realm realm = Realm.getInstance(config2);
+           realm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    realm.clear(LocationObject.class);
+                }});
     }
 
     @Override
@@ -249,7 +318,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.i(TAG, "User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission was granted.
-                mService.requestLocationUpdates();
+                mService.requestLocationUpdates(mSelectedCampaignId);
             } else {
                 // Permission denied.
                 setButtonsState(false);
@@ -282,36 +351,64 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private class MyReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
+            final Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
             if (location != null) {
+
                 Toast.makeText(MainActivity.this, PreferenceUtil.getLocationText(location),
                         Toast.LENGTH_SHORT).show();
-                Realm myRealm = Realm.getInstance(MainActivity.this);
 
+                RealmConfiguration config2 = new RealmConfiguration.Builder(MainActivity.this)
+                        .name("default2")
+                        .schemaVersion(3)
+                        .deleteRealmIfMigrationNeeded()
+                        .build();
+
+                Realm myRealm = Realm.getInstance(config2);
                 List<LocationObject> startToPresentLocations =  myRealm.where(LocationObject.class).findAll();
-               /*
-               Data test:
-               List<LocationObject> startToPresentLocations = new ArrayList<>();
-                startToPresentLocations.add(new LocationObject(10.830693, 106.623001, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.827236, 106.625319, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.821251, 106.630297, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.813748, 106.6327, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.805317, 106.636562, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.802366, 106.640081, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.801607, 106.648235, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.800933, 106.659307, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject(10.799668, 106.674242, 0 ,LocationObject.STATUS_ONGOING));
-                startToPresentLocations.add(new LocationObject( 10.799246, 106.680079, 0 ,LocationObject.STATUS_ONGOING));*/
 
-                if (startToPresentLocations.size() > 0) {
-                    //prepare map drawing.
-                    List<LatLng> locationPoints = getPoints(startToPresentLocations);
-                    refreshMap(mMap);
-                    markStartingLocationOnMap(mMap, locationPoints.get(0));
-                    drawRouteOnMap(mMap, locationPoints);
+             //prepare map drawing.
+                List<LatLng> locationPoints = getPoints(startToPresentLocations);
+                refreshMap(mMap);
+                markStartingLocationOnMap(mMap, locationPoints.get(0));
+                mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("Current location"));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(), location.getLongitude())));
+                drawRouteOnMap(mMap, locationPoints);
+            }
+                if(!TextUtils.isEmpty(mSelectedCampaignId)){
+                    MyApplicaiton.getUserProxy().postLocation(location.getLatitude(), location.getLongitude(), mSelectedCampaignId, 0, new AsyncTaskCompleteListener<Boolean>() {
+                        @Override
+                        public void onTaskComplete(Boolean success) {
+                            if(!success) {
+                                postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mSelectedCampaignId, String.valueOf(0));
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(int errorCode) {
+                            postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mSelectedCampaignId, String.valueOf(0));
+                        }
+                    });
                 }
             }
-        }
+    }
+
+    private void postDataLater(String lat, String lng, String state, String id) {
+        //save to database
+        RealmConfiguration config2 = new RealmConfiguration.Builder(MainActivity.this)
+                .name("default2")
+                .schemaVersion(3)
+                .deleteRealmIfMigrationNeeded()
+                .build();
+        Realm myRealm = Realm.getInstance(config2);
+        myRealm.beginTransaction();
+        // Create an object
+        LocationSend locationObject = myRealm.createObject(LocationSend.class);
+        // Set its fields
+        locationObject.setLat(lat);
+        locationObject.setLng(lng);
+        locationObject.setLocationState(state);
+        locationObject.setCampaignId(id);
+        myRealm.commitTransaction();
     }
 
     @Override
@@ -338,7 +435,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     private void markStartingLocationOnMap(GoogleMap mapObject, LatLng location) {
         mapObject.addMarker(new MarkerOptions().position(location).title("Start location"));
-        mapObject.moveCamera(CameraUpdateFactory.newLatLng(location));
     }
     private void drawRouteOnMap(GoogleMap map, List<LatLng> positions) {
         PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);

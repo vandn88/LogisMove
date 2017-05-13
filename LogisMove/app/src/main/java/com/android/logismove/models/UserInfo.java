@@ -1,23 +1,34 @@
-package com.android.logismove;
+package com.android.logismove.models;
 
-import com.google.gson.annotations.SerializedName;
+
+import io.realm.RealmObject;
 
 /**
  * Created by Admin on 5/10/2017.
  */
 
 public class UserInfo {
-    private int id;
+    private String id;
     private String phone;
     private String email;
-    private String identity_card_num;
+    private String identityCardNum;
 
-    public int getId ()
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    private String name;
+
+    public String getId ()
     {
         return id;
     }
 
-    public void setId (int id)
+    public void setId (String id)
     {
         this.id = id;
     }
@@ -44,17 +55,11 @@ public class UserInfo {
 
     public String getIdentityCardNum()
     {
-        return identity_card_num;
+        return identityCardNum;
     }
 
     public void setIdentityCardNum(String identityCardNum)
     {
-        this.identity_card_num = identityCardNum;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "User Info [id = "+id+", phone = "+phone+", email = "+email+", identity_card_num = "+ identity_card_num +"]";
+        this.identityCardNum = identityCardNum;
     }
 }

@@ -18,15 +18,23 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.NotificationCompat;
+import android.text.TextUtils;
 import android.util.Log;
 
+import com.android.logismove.interfaces.AsyncTaskCompleteListener;
+import com.android.logismove.models.LocationObject;
+import com.android.logismove.models.LocationSend;
+import com.android.logismove.utils.NetworkHelper;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import java.util.concurrent.TimeUnit;
+
 import io.realm.Realm;
+import io.realm.RealmConfiguration;
 
 /**
  * Created by Admin on 5/7/2017.
@@ -51,14 +59,13 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
     /**
      * The desired interval for location updates. Inexact. Updates may be more or less frequent.
      */
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 20000;
 
     /**
      * The fastest rate for active location updates. Updates will never be more frequent
      * than this value.
      */
-    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
-            UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 20000;
 
     /**
      * The identifier for the notification displayed for the foreground service.
@@ -90,6 +97,8 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
      * The current location.
      */
     private Location mLocation;
+    private String mCampaignId;
+    private int mLocationState = -1;
 
     public LocationUpdatesService() {
     }
@@ -186,8 +195,10 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
      * Makes a request for location updates. Note that in this sample we merely log the
      * {@link SecurityException}.
      */
-    public void requestLocationUpdates() {
+    public void requestLocationUpdates(String mCampaignId) {
         Log.i(TAG, "Requesting location updates");
+        this.mCampaignId = mCampaignId;
+        this.mLocationState  = 1;
         PreferenceUtil.setRequestingLocationUpdates(this, true);
         startService(new Intent(getApplicationContext(), LocationUpdatesService.class));
         try {
@@ -205,10 +216,12 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
      */
     public void removeLocationUpdates() {
         Log.i(TAG, "Removing location updates");
+        mLocationState = 2;
         try {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,
                     LocationUpdatesService.this);
             PreferenceUtil.setRequestingLocationUpdates(this, false);
+            sendLocationData(mLocation);
             stopSelf();
         } catch (SecurityException unlikely) {
             PreferenceUtil.setRequestingLocationUpdates(this, true);
@@ -268,11 +281,19 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
     }
 
     @Override
-    public void onLocationChanged(Location location) {
+    public void onLocationChanged(final Location location) {
         Log.i(TAG, "New location: " + location);
+        if(mLocationState == 1)
+            mLocationState = 0;
 
         mLocation = location;
-        Realm myRealm = Realm.getInstance(this);
+        RealmConfiguration config2 = new RealmConfiguration.Builder(this)
+                .name("default2")
+                .schemaVersion(3)
+                .deleteRealmIfMigrationNeeded()
+                .build();
+
+        Realm myRealm = Realm.getInstance(config2);
         myRealm.beginTransaction();
         // Create an object
         LocationObject locationObject = myRealm.createObject(LocationObject.class);
@@ -280,7 +301,6 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
         locationObject.setLatitude(mLocation.getLatitude());
         locationObject.setLongitude(mLocation.getLongitude());
         locationObject.setMiliseconds(mLocation.getTime());
-        locationObject.setStatus(LocationObject.STATUS_ONGOING);
         myRealm.commitTransaction();
 
         // Notify anyone listening for broadcasts about the new location.
@@ -292,6 +312,39 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
         if (serviceIsRunningInForeground(this)) {
             mNotificationManager.notify(NOTIFICATION_ID, getNotification());
         }
+        sendLocationData(location);
+    }
+
+    public void sendLocationData(final Location location){
+        if(!TextUtils.isEmpty(mCampaignId)){
+            MyApplicaiton.getUserProxy().postLocation(location.getLatitude(), location.getLongitude(), mCampaignId, mLocationState, new AsyncTaskCompleteListener<Boolean>() {
+                @Override
+                public void onTaskComplete(Boolean success) {
+                    if(!success) {
+                        postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mCampaignId, String.valueOf(0));
+                    }
+                }
+
+                @Override
+                public void onFailure(int errorCode) {
+                    postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mCampaignId, String.valueOf(0));
+                }
+            });
+        }
+    }
+
+    private void postDataLater(String lat, String lng, String id, String state) {
+        //save to database
+        Realm myRealm = Realm.getInstance(this);
+        myRealm.beginTransaction();
+        // Create an object
+        LocationSend locationObject = myRealm.createObject(LocationSend.class);
+        // Set its fields
+        locationObject.setLat(lat);
+        locationObject.setLng(lng);
+        locationObject.setLocationState(state);
+        locationObject.setCampaignId(id);
+        myRealm.commitTransaction();
     }
 
     /**

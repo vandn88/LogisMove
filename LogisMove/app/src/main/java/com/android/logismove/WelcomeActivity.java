@@ -1,8 +1,10 @@
 package com.android.logismove;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,20 +21,18 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.android.logismove.client.ApiClient;
-import com.android.logismove.client.ApiInterface;
-import com.google.gson.JsonObject;
+import com.android.logismove.interfaces.AsyncTaskCompleteListener;
+import com.android.logismove.models.UserInfo;
+import com.android.logismove.utils.CommonUtils;
+import com.android.logismove.utils.NetworkHelper;
+import com.android.logismove.utils.ShareDataHelper;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import io.realm.Realm;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import static android.R.attr.button;
+import static com.android.logismove.utils.CommonUtils.showProgressBar;
 
 /**
  * Created by Admin on 5/10/2017.
@@ -48,9 +48,10 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
-        String phoneNum = PreferenceUtil.getSharedPreferences(this, PreferencesKey.PREF_USER_ID);
-        if(!TextUtils.equals(phoneNum, "0")) {
-            getUserInfo(phoneNum);
+
+        initApp();
+        if(isUserSignIn()) {
+           gotoMain();
         } else {
             if (!checkPermissions()) {
                 requestPermissions();
@@ -58,6 +59,62 @@ public class WelcomeActivity extends AppCompatActivity {
             else checkPhoneNum();
         }
     }
+
+    public boolean isUserSignIn() {
+        SharedPreferences userInfo = getSharedPreferences(PreferencesKey.PREF_USER_INFO, 0);
+        if (userInfo.contains(PreferencesKey.PREF_USER_ID)) {
+            final UserInfo user = ShareDataHelper.getInstance().getUser();
+            user.setId(userInfo.getString(PreferencesKey.PREF_USER_ID, "0"));
+            user.setName(userInfo.getString(PreferencesKey.PREF_USER_NAME, ""));
+            user.setIdentityCardNum(userInfo.getString(PreferencesKey.PREF_USER_EDENTITY, ""));
+            user.setPhone(userInfo.getString(PreferencesKey.PREF_USER_PHONE, ""));
+            user.setEmail(userInfo.getString(PreferencesKey.PREF_USER_EMAIL, ""));
+            return true;
+        }
+        return false;
+    }
+
+    public void initApp() {
+        NetworkHelper.getConnectivityStatusString(getApplicationContext());
+    }
+
+    public void saveUserInfoToCache() {
+        UserInfo user = ShareDataHelper.getInstance().getUser();
+
+        SharedPreferences userPref = getSharedPreferences(PreferencesKey.PREF_USER_INFO, 0);
+        SharedPreferences.Editor editor = userPref.edit();
+        editor.putString(PreferencesKey.PREF_USER_ID, user.getId());
+        editor.putString(PreferencesKey.PREF_USER_NAME, user.getName());
+        editor.putString(PreferencesKey.PREF_USER_EDENTITY, user.getIdentityCardNum());
+        editor.putString(PreferencesKey.PREF_USER_EMAIL, user.getEmail());
+        editor.putString(PreferencesKey.PREF_USER_PHONE, user.getPhone());
+        editor.apply();
+    }
+
+    public void gotoMain() {
+        final Intent myIntent = new Intent(WelcomeActivity.this, MainActivity.class);
+        startActivity(myIntent);
+        finish();
+    }
+
+    public void getUserInfo(String phoneNum) {
+        final ProgressDialog progressDialog = CommonUtils.showProgressBar(WelcomeActivity.this, R.string.msg_loading);
+        MyApplicaiton.getUserProxy().getUserInfo(phoneNum, new AsyncTaskCompleteListener<Boolean>() {
+            @Override
+            public void onTaskComplete(Boolean isSuccess) {
+                progressDialog.dismiss();
+                saveUserInfoToCache();
+                gotoMain();
+            }
+
+            @Override
+            public void onFailure(final int errorMessage) {
+                progressDialog.dismiss();
+                CommonUtils.showMessage(errorMessage, WelcomeActivity.this);
+            }
+        });
+    }
+
 
     public void checkPhoneNum(){
         final String phoneNum = getMyPhoneNum();
@@ -80,10 +137,10 @@ public class WelcomeActivity extends AppCompatActivity {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
 
-                    if(s.toString().trim().length()==0){
-                        buttonOK.setEnabled(false);
-                    } else {
+                    if(s.toString().trim().length()>10){
                         buttonOK.setEnabled(true);
+                    } else {
+                        buttonOK.setEnabled(false);
                     }
                 }
 
@@ -102,58 +159,6 @@ public class WelcomeActivity extends AppCompatActivity {
             });
 
         }
-    }
-
-    public void getUserInfo(String phoneNum) {
-        PreferenceUtil.saveSharedPreferences(this, PreferencesKey.PREF_USER_ID, phoneNum);
-
-        ApiInterface apiService = ApiClient.getClient().create(ApiInterface.class);
-
-        Call<JsonObject> call = apiService.getUserInfo("1494062364", phoneNum, "559c6c475ee1ef8e93fc0b130409ef9e6b984c0d");
-        call.enqueue(new Callback<JsonObject>() {
-            @Override
-            public void onResponse(Call<JsonObject>call, Response<JsonObject> response) {
-                String jsonString = response.body().toString();
-                try {
-                    JSONObject jsonObj = new JSONObject(jsonString);
-                    JSONObject jsonObjectData = jsonObj.getJSONObject("msg_data");
-                    UserInfo user = new UserInfo();
-                    user.setId(jsonObjectData.getInt("id"));
-                    user.setPhone(jsonObjectData.getString("phone"));
-                    user.setEmail(jsonObjectData.getString("email"));
-                    user.setIdentityCardNum(jsonObjectData.getString("identity_card_num"));
-                    Log.d("USER INFO GET", user.toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<JsonObject>call, Throwable t) {
-                // Log error here since request failed
-                Log.e("USER INFO GET", t.toString());
-            }
-        });
-    }
-
-    public void getCampaign() {
-        ApiInterface apiService =
-                ApiClient.getClient().create(ApiInterface.class);
-
-        Call<JsonObject> call = apiService.getCampaigns(1, "1494062364", "8666d3b1547a95afc44798514add63c815abf4c8");
-        call.enqueue(new Callback<JsonObject>() {
-            @Override
-            public void onResponse(Call<JsonObject>call, Response<JsonObject> response) {
-                String jsonString = response.body().toString();
-                Log.e("CAMPAIGN GET", jsonString);
-            }
-
-            @Override
-            public void onFailure(Call<JsonObject>call, Throwable t) {
-                // Log error here since request failed
-                Log.e("CAMPAIGN GET", t.toString());
-            }
-        });
     }
 
     public String getMyPhoneNum() {

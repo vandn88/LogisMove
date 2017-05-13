@@ -1,14 +1,12 @@
 package com.android.logismove.client;
 
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by Admin on 5/10/2017.
  */
 
 public class ApiClient {
-    public static final String BASE_URL = " http://118.69.57.141/";
+  /*  public static final String BASE_URL = " http://118.69.57.141/";
     private static Retrofit retrofit = null;
 
 
@@ -20,5 +18,5 @@ public class ApiClient {
                     .build();
         }
         return retrofit;
-    }
+    }*/
 }
