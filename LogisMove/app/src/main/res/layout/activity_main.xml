@@ -51,11 +51,11 @@
 
     <Spinner
         android:id="@+id/spinnerCampaign"
-        android:layout_width="match_parent"
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
+        style="@style/Widget.AppCompat.Spinner.Underlined"
+        android:layout_marginTop="18dp"
         android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_margin="@dimen/activity_horizontal_margin"
-        style="@style/Widget.AppCompat.Spinner.Underlined"/>
+        android:layout_alignRight="@+id/linear_track_location"
+        android:layout_alignEnd="@+id/linear_track_location"/>
 </RelativeLayout>

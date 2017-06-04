@@ -15,7 +15,7 @@ public class CommonUtils {
     public static void showMessage(final int stringId, final Activity context) {
         context.runOnUiThread(new Runnable() {
             public void run() {
-                Toast toast = Toast.makeText(context, context.getResources().getString(stringId), Toast.LENGTH_SHORT);
+                Toast toast = Toast.makeText(context, context.getResources().getString(stringId), Toast.LENGTH_LONG);
                 toast.show();
             }
         });

@@ -44,4 +44,14 @@ public class LocationSend extends RealmObject {
 
     private String campaignId;
     private String locationState;
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
+    }
+
+    private String time;
 }

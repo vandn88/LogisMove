@@ -204,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View view) {
                 mCampaignSpinner.setEnabled(true);
                 mService.removeLocationUpdates();
+                CommonUtils.showMessage(R.string.msg_stop_tracking, MainActivity.this);
             }
         });
         // Restore the state of the buttons when the activity (re)launches.
@@ -371,46 +372,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 refreshMap(mMap);
                 markStartingLocationOnMap(mMap, locationPoints.get(0));
                 mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("Current location"));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(), location.getLongitude())));
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(new LatLng(location.getLatitude(), location.getLongitude()))
+                        .zoom(17)
+                        .bearing(90)
+                        .tilt(40)
+                        .build();
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                 drawRouteOnMap(mMap, locationPoints);
             }
-                if(!TextUtils.isEmpty(mSelectedCampaignId)){
-                    MyApplicaiton.getUserProxy().postLocation(location.getLatitude(), location.getLongitude(), mSelectedCampaignId, 0, new AsyncTaskCompleteListener<Boolean>() {
-                        @Override
-                        public void onTaskComplete(Boolean success) {
-                            if(!success) {
-                                postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mSelectedCampaignId, String.valueOf(0));
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(int errorCode) {
-                            postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mSelectedCampaignId, String.valueOf(0));
-                        }
-                    });
-                }
-            }
+        }
     }
-
-    private void postDataLater(String lat, String lng, String state, String id) {
-        //save to database
-        RealmConfiguration config2 = new RealmConfiguration.Builder(MainActivity.this)
-                .name("default2")
-                .schemaVersion(3)
-                .deleteRealmIfMigrationNeeded()
-                .build();
-        Realm myRealm = Realm.getInstance(config2);
-        myRealm.beginTransaction();
-        // Create an object
-        LocationSend locationObject = myRealm.createObject(LocationSend.class);
-        // Set its fields
-        locationObject.setLat(lat);
-        locationObject.setLng(lng);
-        locationObject.setLocationState(state);
-        locationObject.setCampaignId(id);
-        myRealm.commitTransaction();
-    }
-
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
         // Update the buttons state depending on whether location updates are being requested.
@@ -439,14 +411,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void drawRouteOnMap(GoogleMap map, List<LatLng> positions) {
         PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
         options.addAll(positions);
-        Polyline polyline = map.addPolyline(options);
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(positions.get(0).latitude, positions.get(0).longitude))
-                .zoom(17)
-                .bearing(90)
-                .tilt(40)
-                .build();
-        map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        map.addPolyline(options);
     }
     private List<LatLng> getPoints(List<LocationObject> mLocations) {
         List<LatLng> points = new ArrayList<>();

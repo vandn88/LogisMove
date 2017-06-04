@@ -9,7 +9,7 @@
 
     <string name="start_updates">Start updates</string>
     <string name="stop_updates">Stop updates</string>
-    <string name="location_updated_message">Location updated</string>
+    <string name="location_updated_message">LogisMove cập nhật tọa độ của bạn</string>
 
     <string name="redirect_to_settings">Visit Settings to upgrade location</string>
 
@@ -27,7 +27,7 @@
     <string name="request_location_updates">START</string>
     <string name="remove_location_updates">STOP</string>
     <string name="launch_activity">Launch activity</string>
-    <string name="location_updated">Location Updated: %1$s</string>
+    <string name="location_updated">LogisMove: %1$s</string>
 
     <string name="warning_user_have_no_phonenum">"Không lấy được số điện thoại của bạn. Bạn vui lòng nhập tay nhé"</string>
     <string name="permission_phone_state">Quyền truy cập đọc số điện thoại là cần thiết để tiến hành đăng nhập vào hệ thống</string>
@@ -42,5 +42,6 @@
     <string name="msg_error_connect_server">Lỗi kết nối, đề nghị kiểm tra lại tín hiệu 3G hoặc wifi</string>
     <string name="msg_error_server">Lỗi không lấy được dữ liệu. Vui lòng thử lại sau hoặc liên hệ để được trợ giúp</string>
     <string name="msg_loading">Đang tải dữ liệu. Vui lòng chờ giây lát...</string>
+    <string name="msg_stop_tracking">Bạn đã kết thúc việc theo dõi đối với Campaign hiện tại. Vui lòng chọn campaign khác để tiếp tục sử dụng hệ thống.</string>
 
 </resources>

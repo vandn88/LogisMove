@@ -23,6 +23,9 @@ public class NetworkHelper {
 
 			if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
 				return TYPE_MOBILE;
+
+			if(activeNetwork.isConnected())
+				return TYPE_MOBILE;
 		}
 		return TYPE_NOT_CONNECTED;
 	}
@@ -42,5 +45,12 @@ public class NetworkHelper {
 			isConnected = false;
 		}
 		return status;
+	}
+
+	private boolean isNetworkAvailable(Context context) {
+		ConnectivityManager connectivityManager
+				= (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+		return activeNetworkInfo != null && activeNetworkInfo.isConnected();
 	}
 }

@@ -24,6 +24,7 @@ import android.util.Log;
 import com.android.logismove.interfaces.AsyncTaskCompleteListener;
 import com.android.logismove.models.LocationObject;
 import com.android.logismove.models.LocationSend;
+import com.android.logismove.utils.CommonUtils;
 import com.android.logismove.utils.NetworkHelper;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -321,29 +322,35 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
                 @Override
                 public void onTaskComplete(Boolean success) {
                     if(!success) {
-                        postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mCampaignId, String.valueOf(0));
+                        postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mCampaignId, mLocationState);
                     }
                 }
 
                 @Override
                 public void onFailure(int errorCode) {
-                    postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mCampaignId, String.valueOf(0));
+                    postDataLater(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()), mCampaignId, mLocationState);
                 }
             });
         }
     }
 
-    private void postDataLater(String lat, String lng, String id, String state) {
+    private void postDataLater(String lat, String lng, String id, int state) {
         //save to database
-        Realm myRealm = Realm.getInstance(this);
+        RealmConfiguration config2 = new RealmConfiguration.Builder(this)
+                .name("default2")
+                .schemaVersion(3)
+                .deleteRealmIfMigrationNeeded()
+                .build();
+        Realm myRealm = Realm.getInstance(config2);
         myRealm.beginTransaction();
         // Create an object
         LocationSend locationObject = myRealm.createObject(LocationSend.class);
         // Set its fields
         locationObject.setLat(lat);
         locationObject.setLng(lng);
-        locationObject.setLocationState(state);
+        locationObject.setLocationState(String.valueOf(state));
         locationObject.setCampaignId(id);
+        locationObject.setTime(CommonUtils.getCurrentTime());
         myRealm.commitTransaction();
     }
 

@@ -16,6 +16,7 @@ import android.telephony.TelephonyManager;
 import android.widget.Toast;
 
 import java.text.DateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -52,12 +53,12 @@ public class PreferenceUtil {
      */
     static String getLocationText(Location location) {
         return location == null ? "Unknown location" :
-                "(" + location.getLatitude() + ", " + location.getLongitude() + ")";
+                "Lat:" + location.getLatitude() + ", Long:" + location.getLongitude() + ")";
     }
 
     static String getLocationTitle(Context context) {
         return context.getString(R.string.location_updated,
-                DateFormat.getDateTimeInstance().format(new Date()));
+                DateFormat.getDateTimeInstance().format(Calendar.getInstance().getTime()));
     }
 
     public static String getSharedPreferences(Context mContext, String key) {

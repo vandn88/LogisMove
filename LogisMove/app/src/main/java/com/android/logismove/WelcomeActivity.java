@@ -25,12 +25,17 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.android.logismove.interfaces.AsyncTaskCompleteListener;
+import com.android.logismove.models.LocationSend;
 import com.android.logismove.models.UserInfo;
 import com.android.logismove.utils.CommonUtils;
 import com.android.logismove.utils.NetworkHelper;
 import com.android.logismove.utils.ShareDataHelper;
+import com.google.gson.Gson;
+
+import java.util.List;
 
 import io.realm.Realm;
+import io.realm.RealmConfiguration;
 
 import static com.android.logismove.utils.CommonUtils.showProgressBar;
 
@@ -48,10 +53,13 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
-
         initApp();
         if(isUserSignIn()) {
-           gotoMain();
+            if(NetworkHelper.isConnected) {
+                checkIfHaveCacheCampaign(WelcomeActivity.this);
+            } else {
+                CommonUtils.showMessage(R.string.msg_no_internet, WelcomeActivity.this);
+            }
         } else {
             if (!checkPermissions()) {
                 requestPermissions();
@@ -243,6 +251,50 @@ public class WelcomeActivity extends AppCompatActivity {
                         .show();
             }
         }
+    }
+
+
+    public void checkIfHaveCacheCampaign(Context context){
+        final RealmConfiguration config2 = new RealmConfiguration.Builder(context)
+                .name("default2")
+                .schemaVersion(3)
+                .deleteRealmIfMigrationNeeded()
+                .build();
+
+        final Realm myRealm = Realm.getInstance(config2);
+        List<LocationSend> locationSends =  myRealm.where(LocationSend.class).findAll();
+        if(locationSends.size()>0){
+            String json ="{\"list\":[";
+            for(int i = 0; i<locationSends.size(); i++) {
+                LocationSend locationSend = locationSends.get(i);
+                if(locationSend.getTime() == null)
+                    continue;
+                json += "{\"long\":" + locationSend.getLng() + "," + "\"lat\":" + locationSend.getLat() + "," + "\"register_id\":" + locationSend.getCampaignId() + "," + "\"created_at\":" + locationSend.getTime() + "},";
+            }
+            json = json.substring(0, json.length()-1);
+            json += "]}";
+            MyApplicaiton.getUserProxy().postListLocation(json, new AsyncTaskCompleteListener<Boolean>() {
+                @Override
+                public void onTaskComplete(Boolean isSuccess) {
+                    if(isSuccess) {
+                        Realm realm = Realm.getInstance(config2);
+                        realm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute(Realm realm) {
+                                realm.clear(LocationSend.class);
+                            }});
+                    }
+                    gotoMain();
+                }
+
+                @Override
+                public void onFailure(int errorCode) {
+                    gotoMain();
+                }
+            });
+        } else
+            gotoMain();
+
     }
 
 }

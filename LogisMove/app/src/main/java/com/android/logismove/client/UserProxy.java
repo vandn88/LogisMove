@@ -10,6 +10,7 @@ import com.android.logismove.interfaces.AsyncTaskCompleteListener;
 import com.android.logismove.utils.CommonUtils;
 import com.android.logismove.utils.NetworkHelper;
 import com.android.logismove.utils.ShareDataHelper;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,6 +22,9 @@ import java.util.ArrayList;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
+import static android.R.attr.id;
+import static android.R.id.list;
+
 /**
  * Created by Admin on 5/13/2017.
  */
@@ -29,6 +33,7 @@ public class UserProxy extends BaseProxy {
     private final static String TAG_USER_INFO = "info";
     private final static String TAG_USER_CAMPAIGN = "/getcampaign";
     private final static String TAG_LOCATION = "locate";
+    private final static String TAG_LOCATION_LIST = "locatelist";
     private final static String TAG_JSON_DATA = "msg_data";
 
    // @Query("time") String time, @Query("phone") String phone, @Query("sign") String sign
@@ -99,8 +104,17 @@ public class UserProxy extends BaseProxy {
     public void postLocation(double lat, double lng, String campaignId, int progress,
                              final AsyncTaskCompleteListener<Boolean> callback) {
         String secureLink = ClientConstants.TAG_API + ClientConstants.TAG_TRACKER + TAG_LOCATION;
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("long",lng);
+            obj.put("lat",lat);
+            obj.put("register_id",campaignId);
+            obj.put("progress",progress);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         // post params
-        super.doPostRequest(secureLink, lat, lng, campaignId, progress,
+        super.doPostRequest(secureLink, obj.toString(),
                 new AsyncTaskCompleteListener<JSONObject>() {
 
                     @Override
@@ -113,6 +127,37 @@ public class UserProxy extends BaseProxy {
                                callback.onTaskComplete(true);
                            }
                            else
+                                callback.onFailure(R.string.msg_error_data);
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            callback.onFailure(R.string.msg_error_data);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(int errorMessage) {
+                        // TODO Auto-generated method stub
+                        callback.onFailure(errorMessage);
+                    }
+                });
+    }
+
+    public void postListLocation(String jsonParams, final AsyncTaskCompleteListener<Boolean> callback) {
+        String secureLink = ClientConstants.TAG_API + ClientConstants.TAG_TRACKER + TAG_LOCATION_LIST;
+        // post params
+        super.doPostRequest(secureLink, jsonParams, new AsyncTaskCompleteListener<JSONObject>() {
+
+                    @Override
+                    public void onTaskComplete(JSONObject result) {
+                        String TAG_MSG = "msg_code";
+                        String TAG_STATUS = "status";
+                        String TAG_ERROR_CODE = "error_code";
+                        try {
+                            if(TextUtils.equals(result.getString(TAG_MSG), "success")) {
+                                callback.onTaskComplete(true);
+                            }
+                            else
                                 callback.onFailure(R.string.msg_error_data);
 
                         } catch (JSONException e) {

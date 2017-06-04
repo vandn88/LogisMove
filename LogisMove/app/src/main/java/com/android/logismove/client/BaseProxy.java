@@ -55,18 +55,10 @@ public class BaseProxy {
 		}
 	}
 
-	protected void doPostRequest(String link, double lat, double lng, String id, int progress, AsyncTaskCompleteListener<JSONObject> callback) {
+	protected void doPostRequest(String link,  String jsonParams, AsyncTaskCompleteListener<JSONObject> callback) {
 		this.callback = callback;
 		if (NetworkHelper.isConnected) {
-			JSONObject obj = new JSONObject();
-			try {
-				obj.put("long",lng);
-				obj.put("lat",lat);
-				obj.put("register_id",id);
-				obj.put("progress",progress);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
+
 
 			/*for (int i = 0; i < params.length; i++) {
 				try {
@@ -77,7 +69,7 @@ public class BaseProxy {
 				}
 			}*/
 			// post params
-			RequestBody formBody = RequestBody.create(JSON, obj.toString());
+			RequestBody formBody = RequestBody.create(JSON, jsonParams);
 
 			Request request = null;
 			try {
