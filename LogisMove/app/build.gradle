@@ -13,7 +13,7 @@ android {
     buildToolsVersion "25.0.3"
     defaultConfig {
         applicationId "com.android.logismove"
-        minSdkVersion 14
+        minSdkVersion 15
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
@@ -28,7 +28,9 @@ android {
         }
     }
 }
-
+repositories {
+    mavenCentral()
+}
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
@@ -45,4 +47,5 @@ dependencies {
     compile 'com.squareup.okio:okio:1.13.0'
     compile 'junit:junit:4.12'
     compile 'com.google.code.gson:gson:2.8.0'
+    compile 'com.facebook.android:facebook-android-sdk:[4,5)'
 }

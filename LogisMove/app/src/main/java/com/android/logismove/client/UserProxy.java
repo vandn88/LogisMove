@@ -100,7 +100,7 @@ public class UserProxy extends BaseProxy {
 
     //@GET("api/tracker/locate")
     //(@Query("time") String time, @Query("sign") String sign);
-    //@param {"long":106.7008,"lat":10.7759,"register_id":1,"progress":2}register_id:1 (id from getcampaign)
+    //@param {"long":106.7008,"lat":10.7759,"register_id":1,"progress":2, register_id:1 (id from getcampaign), tracker_id: user id}
     public void postLocation(double lat, double lng, String campaignId, int progress,
                              final AsyncTaskCompleteListener<Boolean> callback) {
         String secureLink = ClientConstants.TAG_API + ClientConstants.TAG_TRACKER + TAG_LOCATION;
@@ -110,6 +110,7 @@ public class UserProxy extends BaseProxy {
             obj.put("lat",lat);
             obj.put("register_id",campaignId);
             obj.put("progress",progress);
+            obj.put("tracker_id", ShareDataHelper.getInstance().getUser().getId());
         } catch (JSONException e) {
             e.printStackTrace();
         }

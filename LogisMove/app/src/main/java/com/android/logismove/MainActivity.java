@@ -28,11 +28,14 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.logismove.adapter.CampaignAdapter;
@@ -62,19 +65,19 @@ import static com.android.logismove.R.id.map;
 
 /**
  * The only activity in this sample.
- *
+ * <p>
  * Note: for apps running in the background on "O" devices (regardless of the targetSdkVersion),
  * location may be computed less frequently than requested when the app is not in the foreground.
  * Apps that use a foreground service -  which involves displaying a non-dismissable
  * notification -  can bypass the background location limits and request location updates as before.
- *
+ * <p>
  * This sample uses a long-running bound and started service for location updates. The service is
  * aware of foreground status of this activity, which is the only bound client in
  * this sample. After requesting location updates, when the activity ceases to be in the foreground,
  * the service promotes itself to a foreground service and continues receiving location updates.
  * When the activity comes back to the foreground, the foreground service stops, and the
  * notification associated with that foreground service is removed.
- *
+ * <p>
  * While the foreground service notification is displayed, the user has the option to launch the
  * activity from the notification. The user can also remove location updates directly from the
  * notification. This dismisses the notification and stops the service.
@@ -123,49 +126,63 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         myReceiver = new MyReceiver();
         setContentView(R.layout.activity_main);
-        mCampaignSpinner = (Spinner)findViewById(R.id.spinnerCampaign);
+        mCampaignSpinner = (Spinner) findViewById(R.id.spinnerCampaign);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(map);
         mapFragment.getMapAsync(this);
         getCampaign();
     }
 
-    public void getCampaign(){
+    public void getCampaign() {
         final ProgressDialog progressDialog = CommonUtils.showProgressBar(MainActivity.this, R.string.msg_loading);
-
         MyApplicaiton.getUserProxy().getUserCampaign(ShareDataHelper.getInstance().getUser().getId(), new AsyncTaskCompleteListener<ArrayList<Campaign>>() {
             @Override
             public void onTaskComplete(ArrayList<Campaign> result) {
                 progressDialog.dismiss();
                 // Check that the user hasn't revoked permissions by going to Settings.
-                Campaign[] arrCampaign = result.toArray(new Campaign[result.size()]);
-                final CampaignAdapter adapter = new CampaignAdapter(MainActivity.this, android.R.layout.simple_spinner_item, arrCampaign);
-               runOnUiThread(new Runnable() {
-                   @Override
-                   public void run() {
-                       mCampaignSpinner.setAdapter(adapter);
-                       mCampaignSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                           @Override
-                           public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                               String selected = adapter.getItemID(position);
-                               if(!TextUtils.equals(mSelectedCampaignId, selected)){
-                                   mSelectedCampaignId = selected;
-                                   remoteDrawRoute();
-                               }
-                           }
+                final Campaign[] arrCampaign = result.toArray(new Campaign[result.size()]);
+                final CampaignAdapter adapter = new CampaignAdapter(MainActivity.this, android.R.layout.simple_spinner_item, arrCampaign) {
+                    @Override
+                    public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                        LayoutInflater inflater = getLayoutInflater();
+                        //LayoutInflater inflater=getActivity.getLayoutInflater();//for fragment
+                        View row = inflater.inflate(R.layout.list_item, parent, false);
+                        final TextView label = (TextView) row.findViewById(R.id.txt_spinner_item);
+                        label.setText(arrCampaign[position].getCampaignName());
+                        return row;
+                    }
+                };
 
-                           @Override
-                           public void onNothingSelected(AdapterView<?> parent) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mCampaignSpinner.setAdapter(adapter);
+                        mCampaignSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                            @Override
+                            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                             /*  String selected = adapter.getItemID(position);
+                               if(!TextUtils.equals(mSelectedCampaignId, selected)){*/
+                             /*      remoteDrawRoute();
+                               }*/
+                                String selected = adapter.getItemID(position);
+                                if (mSelectedCampaignId != null && !TextUtils.equals(mSelectedCampaignId, selected)) {
+                                    removeRoute();
+                                }
+                                mSelectedCampaignId = selected;
+                            }
 
-                           }
-                       });
-                       if (PreferenceUtil.requestingLocationUpdates(MainActivity.this)) {
-                           if (!checkPermissions()) {
-                               requestPermissions();
-                           }
-                       }
-                   }
-               });
+                            @Override
+                            public void onNothingSelected(AdapterView<?> parent) {
+
+                            }
+                        });
+                        if (PreferenceUtil.requestingLocationUpdates(MainActivity.this)) {
+                            if (!checkPermissions()) {
+                                requestPermissions();
+                            }
+                        }
+                    }
+                });
             }
 
             @Override
@@ -216,19 +233,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Context.BIND_AUTO_CREATE);
     }
 
-    public void remoteDrawRoute() {
+    public void removeRoute() {
         refreshMap(mMap);
         RealmConfiguration config2 = new RealmConfiguration.Builder(MainActivity.this)
                 .name("default2")
                 .schemaVersion(3)
                 .deleteRealmIfMigrationNeeded()
                 .build();
-           Realm realm = Realm.getInstance(config2);
-           realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    realm.clear(LocationObject.class);
-                }});
+        Realm realm = Realm.getInstance(config2);
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                realm.clear(LocationObject.class);
+            }
+        });
     }
 
     @Override
@@ -267,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * Returns the current state of the permissions needed.
      */
     private boolean checkPermissions() {
-        return  PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
+        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION);
     }
 
@@ -365,9 +383,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .build();
 
                 Realm myRealm = Realm.getInstance(config2);
-                List<LocationObject> startToPresentLocations =  myRealm.where(LocationObject.class).findAll();
+                List<LocationObject> startToPresentLocations = myRealm.where(LocationObject.class).findAll();
 
-             //prepare map drawing.
+                //prepare map drawing.
                 List<LatLng> locationPoints = getPoints(startToPresentLocations);
                 refreshMap(mMap);
                 markStartingLocationOnMap(mMap, locationPoints.get(0));
@@ -383,6 +401,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
     }
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
         // Update the buttons state depending on whether location updates are being requested.
@@ -396,23 +415,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (requestingLocationUpdates) {
             mRequestLocationUpdatesButton.setEnabled(false);
             mRemoveLocationUpdatesButton.setEnabled(true);
+            mCampaignSpinner.setEnabled(false);
         } else {
             mRequestLocationUpdatesButton.setEnabled(true);
             mRemoveLocationUpdatesButton.setEnabled(false);
+            mCampaignSpinner.setEnabled(true);
         }
     }
 
     private void refreshMap(GoogleMap mapInstance) {
         mapInstance.clear();
     }
+
     private void markStartingLocationOnMap(GoogleMap mapObject, LatLng location) {
         mapObject.addMarker(new MarkerOptions().position(location).title("Start location"));
     }
+
     private void drawRouteOnMap(GoogleMap map, List<LatLng> positions) {
         PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
         options.addAll(positions);
         map.addPolyline(options);
     }
+
     private List<LatLng> getPoints(List<LocationObject> mLocations) {
         List<LatLng> points = new ArrayList<>();
         for (LocationObject mLocation : mLocations) {

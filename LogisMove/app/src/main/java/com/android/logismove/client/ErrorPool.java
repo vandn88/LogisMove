@@ -12,12 +12,13 @@ import static android.view.View.GONE;
  */
 
 public class ErrorPool {
+
     // data server tra ve khong co gi thay doi, khong can update view.
     public final static int NOT_MODIFY = 304;
 
     // Khi gap loi nay kiem tra danh sach params gui len server xem co bi thieu
     // khong.
-    public final static int BAD_REQUEST = 400;
+    public final static int BAD_REQUEST = 422;
 
     // Khi gap loi nay yeu cau nguoi dung dang nhap lai
     public final static int UNAUTHORIZED = 401;
@@ -33,6 +34,10 @@ public class ErrorPool {
 
     // Loi du lieu bi xoa
     public final static int GONE = 410;
+
+    //Lỗi Server
+    public final static int SERVER = 500;
+
     public static void handleErrorMsgString(int errorCode,  AsyncTaskCompleteListener<JSONObject> callback) {
         switch (errorCode) {
             case NOT_MODIFY:
@@ -55,6 +60,9 @@ public class ErrorPool {
                 break;
             case GONE:
                 callback.onFailure(R.string.msg_error_item_is_deleted);
+                break;
+            case SERVER:
+                callback.onFailure(R.string.msg_error_internal);
                 break;
             default:
                 callback.onFailure(R.string.msg_error_server);

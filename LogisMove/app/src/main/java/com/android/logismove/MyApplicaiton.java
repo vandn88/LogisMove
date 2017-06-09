@@ -7,6 +7,7 @@ import android.support.multidex.MultiDexApplication;
 import com.android.logismove.client.UserProxy;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -43,7 +44,11 @@ public class MyApplicaiton extends MultiDexApplication {
      */
     public static OkHttpClient getOkHttpClient() {
         if (mOkHttpClient == null) {
-            mOkHttpClient = new OkHttpClient();
+            mOkHttpClient = new OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .writeTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build();
         }
         return mOkHttpClient;
     }

@@ -60,13 +60,13 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
     /**
      * The desired interval for location updates. Inexact. Updates may be more or less frequent.
      */
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 20000;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
 
     /**
      * The fastest rate for active location updates. Updates will never be more frequent
      * than this value.
      */
-    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 20000;
+    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
 
     /**
      * The identifier for the notification displayed for the foreground service.
@@ -247,14 +247,15 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
         // The PendingIntent to launch activity.
         PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, MainActivity.class), 0);
+                new Intent(this, WelcomeActivity.class), 0);
 
         return new NotificationCompat.Builder(this)
+                .setContentIntent(activityPendingIntent)
                 .setContentText(text)
                 .setContentTitle(PreferenceUtil.getLocationTitle(this))
                 .setOngoing(true)
                 .setPriority(Notification.PRIORITY_HIGH)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_my_location)
                 .setTicker(text)
                 .setWhen(System.currentTimeMillis()).build();
     }
