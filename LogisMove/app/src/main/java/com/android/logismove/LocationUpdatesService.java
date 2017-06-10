@@ -285,9 +285,6 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
     @Override
     public void onLocationChanged(final Location location) {
         Log.i(TAG, "New location: " + location);
-        if(mLocationState == 1)
-            mLocationState = 0;
-
         mLocation = location;
         RealmConfiguration config2 = new RealmConfiguration.Builder(this)
                 .name("default2")
