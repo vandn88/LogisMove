@@ -58,16 +58,6 @@ public class BaseProxy {
 	protected void doPostRequest(String link,  String jsonParams, AsyncTaskCompleteListener<JSONObject> callback) {
 		this.callback = callback;
 		if (NetworkHelper.isConnected) {
-
-
-			/*for (int i = 0; i < params.length; i++) {
-				try {
-					obj.put(params[i], paramsValue[i]);
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}*/
 			// post params
 			RequestBody formBody = RequestBody.create(JSON, jsonParams);
 

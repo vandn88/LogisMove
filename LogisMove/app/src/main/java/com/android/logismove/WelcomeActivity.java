@@ -1,14 +1,11 @@
 package com.android.logismove;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -16,17 +13,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.android.logismove.interfaces.AsyncTaskCompleteListener;
@@ -35,16 +28,11 @@ import com.android.logismove.models.UserInfo;
 import com.android.logismove.utils.CommonUtils;
 import com.android.logismove.utils.NetworkHelper;
 import com.android.logismove.utils.ShareDataHelper;
-import com.google.gson.Gson;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
-
-import static com.android.logismove.utils.CommonUtils.showProgressBar;
 
 /**
  * Created by Admin on 5/10/2017.
@@ -68,10 +56,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 CommonUtils.showMessage(R.string.msg_no_internet, WelcomeActivity.this);
             }
         } else {
-            if (!checkPermissions()) {
-                requestPermissions();
-            }
-            else checkPhoneNum();
+           initView();
         }
     }
 
@@ -131,94 +116,45 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
 
-    public void checkPhoneNum(){
-        final String phoneNum = getMyPhoneNum();
-        if (TextUtils.isEmpty(phoneNum)) {
-            findViewById(R.id.linear_phonenum_input).setVisibility(View.VISIBLE);
-            findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
-            Toast.makeText(this, getString(R.string.warning_user_have_no_phonenum), Toast.LENGTH_SHORT).show();
-            final EditText editTextPhoneNum = (EditText)findViewById(R.id.input_phone_num);
+    public void initView(){
+        findViewById(R.id.linear_phonenum_input).setVisibility(View.VISIBLE);
+        findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
+        final EditText editTextPhoneNum = (EditText)findViewById(R.id.input_phone_num);
+        final View buttonOK = findViewById(R.id.btn_enter_phone_num);
+        buttonOK.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getUserInfo(editTextPhoneNum.getText().toString());
+            }
+        });
 
-            final View buttonOK = findViewById(R.id.btn_enter_phone_num);
-            buttonOK.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    getUserInfo(editTextPhoneNum.getText().toString());
+        editTextPhoneNum.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                if(s.toString().trim().length()>9){
+                    buttonOK.setEnabled(true);
+                } else {
+                    buttonOK.setEnabled(false);
                 }
-            });
+            }
 
-            editTextPhoneNum.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count,
+                                          int after) {
+                // TODO Auto-generated method stub
 
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
-                    if(s.toString().trim().length()>9){
-                        buttonOK.setEnabled(true);
-                    } else {
-                        buttonOK.setEnabled(false);
-                    }
-                }
+            @Override
+            public void afterTextChanged(Editable s) {
+                // TODO Auto-generated method stub
 
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count,
-                                              int after) {
-                    // TODO Auto-generated method stub
+            }
+        });
 
-                }
 
-                @Override
-                public void afterTextChanged(Editable s) {
-                    // TODO Auto-generated method stub
-
-                }
-            });
-
-        }
-    }
-
-    public String getMyPhoneNum() {
-        TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-        if(tm.getSimState() == TelephonyManager.SIM_STATE_ABSENT)
-            return null;
-
-        String mPhoneNumber = tm.getLine1Number();
-        return mPhoneNumber;
-    }
-
-    private boolean checkPermissions() {
-        return  PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.READ_PHONE_STATE);
-    }
-
-    private void requestPermissions() {
-        boolean shouldProvideRationale =
-                ActivityCompat.shouldShowRequestPermissionRationale(this,
-                        Manifest.permission.READ_PHONE_STATE);
-
-        // Provide an additional rationale to the user. This would happen if the user denied the
-        // request previously, but didn't check the "Don't ask again" checkbox.
-        if (shouldProvideRationale) {
-            Log.i(TAG, "Displaying permission rationale to provide additional context.");
-            Snackbar.make(
-                    findViewById(R.id.activity_main),
-                    R.string.permission_phone_state,
-                    Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.ok, new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            // Request permission
-                            ActivityCompat.requestPermissions(WelcomeActivity.this,
-                                    PERMISSIONS_PHONE_STATE,
-                                    REQUEST_PHONE_STATE_PERMISSIONS_REQUEST_CODE);
-                        }
-                    })
-                    .show();
-        } else {
-            // permissions have not been granted yet. Request them directly.
-            ActivityCompat.requestPermissions(WelcomeActivity.this,
-                    PERMISSIONS_PHONE_STATE,
-                    REQUEST_PHONE_STATE_PERMISSIONS_REQUEST_CODE);
-        }
     }
 
     /**
@@ -235,7 +171,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 Log.i(TAG, "User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission was granted.
-               checkPhoneNum();
+               initView();
             } else {
                 Snackbar.make(
                         findViewById(R.id.activity_main),
@@ -280,7 +216,8 @@ public class WelcomeActivity extends AppCompatActivity {
                         + "\"lat\":" + locationSend.getLat() + ","
                         + "\"register_id\":" + locationSend.getCampaignId() + ","
                         + "\"created_at\":" + locationSend.getTime() + ","
-                        + "\"tracker_id\":" + ShareDataHelper.getInstance().getUser().getId()
+                        + "\"tracker_id\":" + ShareDataHelper.getInstance().getUser().getId()+ ","
+                        + "\"progress\":" + locationSend.getLocationState()
                         + "},";
             }
             json = json.substring(0, json.length()-1);
@@ -301,6 +238,9 @@ public class WelcomeActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(int errorCode) {
+                    if (BuildConfig.DEBUG) {
+                        CommonUtils.showMessage(errorCode, WelcomeActivity.this);
+                    }
                     gotoMain();
                 }
             });

@@ -39,7 +39,7 @@
     <string name="msg_error_bad_request">bad request.</string>
     <string name="msg_error_not_modify">not modify.</string>
     <string name="msg_error_forbidden">Quyền truy cập bị chặn</string>
-    <string name="msg_require_login">Bạn vui lòng đăng nhập!</string>
+    <string name="msg_require_login">Quyền truy cập bị chặn.\nBạn vui lòng đăng kí tài khoản cho số điện thoại này!</string>
     <string name="msg_error_connect_server">Lỗi kết nối, đề nghị kiểm tra lại tín hiệu 3G hoặc wifi</string>
     <string name="msg_error_server">Lỗi không lấy được dữ liệu. Vui lòng thử lại sau hoặc liên hệ để được trợ giúp</string>
     <string name="msg_loading">Đang tải dữ liệu. Vui lòng chờ giây lát...</string>

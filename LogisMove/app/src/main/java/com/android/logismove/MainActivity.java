@@ -1,5 +1,6 @@
 package com.android.logismove;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -8,31 +9,24 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
-import android.os.IBinder;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.text.TextUtils;
-import android.util.Log;
-
-import android.Manifest;
-
-import android.content.pm.PackageManager;
-
 import android.net.Uri;
-
+import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -42,7 +36,6 @@ import com.android.logismove.adapter.CampaignAdapter;
 import com.android.logismove.interfaces.AsyncTaskCompleteListener;
 import com.android.logismove.models.Campaign;
 import com.android.logismove.models.LocationObject;
-import com.android.logismove.models.LocationSend;
 import com.android.logismove.utils.CommonUtils;
 import com.android.logismove.utils.ShareDataHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -52,7 +45,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
@@ -209,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (!checkPermissions()) {
                     requestPermissions();
                 } else {
-                    refreshMap(mMap);
+                    removeRoute();
                     mService.requestLocationUpdates(mSelectedCampaignId);
                     mCampaignSpinner.setEnabled(false);
                 }

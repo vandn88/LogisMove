@@ -20,6 +20,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.android.logismove.interfaces.AsyncTaskCompleteListener;
 import com.android.logismove.models.LocationObject;
@@ -284,8 +285,24 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
     @Override
     public void onLocationChanged(final Location location) {
+       Location lastLocation = null;
+        try {
+            lastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            Log.i(TAG, "Old location: " + lastLocation);
+        } catch (SecurityException unlikely) {
+            Log.e(TAG, "Lost location permission." + unlikely);
+        }
         Log.i(TAG, "New location: " + location);
         mLocation = location;
+        if (lastLocation == null) {
+            lastLocation = location;
+        }
+        if (mLocation.distanceTo(lastLocation) < 210) {
+            startToSendLocationData(location);
+        }
+    }
+
+    private void startToSendLocationData(final Location location) {
         RealmConfiguration config2 = new RealmConfiguration.Builder(this)
                 .name("default2")
                 .schemaVersion(3)
